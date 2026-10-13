@@ -7,8 +7,9 @@ namespace VoiceActedMithrix.UI
     {
         static string MithrixPreface = "Mithrix Voice Actor: ";
         static string FalseSonPreface = "False Son Voice Actor: ";
+        static string SolusHeartPreface = "Solus Heart Voice Actor: ";
 
-        bool voiceM;
+        string voiceTarget;
 
         Text textAsset;
 
@@ -24,31 +25,52 @@ namespace VoiceActedMithrix.UI
             "KKing"
         };
 
+        static string[] voiceMapSH = new string[]
+        {
+            "KaioVA",
+            "BootlegBison"
+        };
+
         void Start()
         {
-            voiceM = gameObject.name == "B1";
+            voiceTarget = gameObject.name;
             textAsset = transform.Find("Text").GetComponent<Text>();
             UpdateText(false);
         }
 
         public void UpdateText(bool changeConfig)
         {
-            if (changeConfig)
+            switch (voiceTarget)
             {
-                if (voiceM)
-                {
-                    Configuration.MithrixVoice.Value = (Configuration.MithrixVoice.Value + 1) % voiceMapM.Length;
-                    VoiceActedMithrix.LoadBrotherVoice();
-                }
-                else
-                {
-                    Configuration.FalseSonVoice.Value = (Configuration.FalseSonVoice.Value + 1) % voiceMapFS.Length;
-                    VoiceActedMithrix.LoadFalseSonVoice();
-                }
+                case "B1":
+                    if (changeConfig)
+                    {
+                        Configuration.MithrixVoice.Value = (Configuration.MithrixVoice.Value + 1) % voiceMapM.Length;
+                        VoiceActedMithrix.LoadBrotherVoice();
+                    }
+                    textAsset.text = MithrixPreface + voiceMapM[Configuration.MithrixVoice.Value];
+                    if (Configuration.MithrixVoice.Value == 0) VoiceActedMithrix.HereticKurskanFix("Kur-skan");
+                    else VoiceActedMithrix.HereticKurskanFix("Heretic");
+                    break;
+                case "B2":
+                    if (changeConfig)
+                    {
+                        Configuration.FalseSonVoice.Value = (Configuration.FalseSonVoice.Value + 1) % voiceMapFS.Length;
+                        VoiceActedMithrix.LoadFalseSonVoice();
+                    }
+                    textAsset.text = FalseSonPreface + voiceMapFS[Configuration.FalseSonVoice.Value];
+                    break;
+                case "B3":
+                    if (changeConfig)
+                    {
+                        Configuration.SolusHeartVoice.Value = (Configuration.SolusHeartVoice.Value + 1) % voiceMapSH.Length;
+                        VoiceActedMithrix.LoadSolusHeartVoice();
+                    }
+                    textAsset.text = SolusHeartPreface + voiceMapSH[Configuration.SolusHeartVoice.Value];
+                    break;
+                default:
+                    break;
             }
-
-            if (voiceM) textAsset.text = MithrixPreface + voiceMapM[Configuration.MithrixVoice.Value];
-            else textAsset.text = FalseSonPreface + voiceMapFS[Configuration.FalseSonVoice.Value];
         }
     }
 }

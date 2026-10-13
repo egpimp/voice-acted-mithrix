@@ -4,9 +4,6 @@ using System.IO;
 using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 using RoR2.UI;
-using RoR2.UI.SkinControllers;
-using TMPro;
-using System;
 
 namespace VoiceActedMithrix.UI
 {
@@ -43,9 +40,11 @@ namespace VoiceActedMithrix.UI
             prefab = bundle.LoadAsset<GameObject>("VoiceSelectionPanel");
             GameObject btn1 = prefab.transform.Find("Canvas/B1").gameObject;
             GameObject btn2 = prefab.transform.Find("Canvas/B2").gameObject;
-            btn1.GetComponent<Image>().sprite = btn2.GetComponent<Image>().sprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/UI/texUICleanPanel.png").WaitForCompletion();
+            GameObject btn3 = prefab.transform.Find("Canvas/B3").gameObject;
+            btn1.GetComponent<Image>().sprite = btn2.GetComponent<Image>().sprite = btn3.GetComponent<Image>().sprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/UI/texUICleanPanel.png").WaitForCompletion();
             ModifyButton(btn1).hoverToken = "VMR_TITLE_MITHRIXVOICE_DESC";
             ModifyButton(btn2).hoverToken = "VMR_TITLE_FALSESONVOICE_DESC";
+            ModifyButton(btn3).hoverToken = "VMR_TITLE_SOLUSVOICE_DESC";
         }
 
         static HGButton ModifyButton(GameObject button)
@@ -66,6 +65,7 @@ namespace VoiceActedMithrix.UI
         {
             LanguageAPI.Add("VMR_TITLE_MITHRIXVOICE_DESC", "Cycle through which voice actor to use for the Mithrix voice.", "en");
             LanguageAPI.Add("VMR_TITLE_FALSESONVOICE_DESC", "Cycle through which voice actor to use for the False Son voice.", "en");
+            LanguageAPI.Add("VMR_TITLE_SOLUSVOICE_DESC", "Cycle through which voice actor to use for the Solus Heart voice.", "en");
         }
 
         internal static void AddUI(On.RoR2.UI.MainMenu.MainMenuController.orig_Start orig, RoR2.UI.MainMenu.MainMenuController self)
@@ -76,14 +76,18 @@ namespace VoiceActedMithrix.UI
             instance = GameObject.Instantiate(prefab, child);
             GameObject b1 = instance.transform.Find("Canvas/B1").gameObject;
             GameObject b2 = instance.transform.Find("Canvas/B2").gameObject;
+            GameObject b3 = instance.transform.Find("Canvas/B3").gameObject;
             HGButton b1Button = b1.GetComponent<HGButton>();
             VoiceChanger b1Component = b1.GetComponent<VoiceChanger>();
             HGButton b2Button = b2.GetComponent<HGButton>();
             VoiceChanger b2Component = b2.GetComponent<VoiceChanger>();
+            HGButton b3Button = b3.GetComponent<HGButton>();
+            VoiceChanger b3Component = b3.GetComponent<VoiceChanger>();
 
-            b1Button.hoverLanguageTextMeshController = b2Button.hoverLanguageTextMeshController = child.Find("GenericMenuButtonPanel/JuicePanel/DescriptionPanel, Naked/ContentSizeFitter/DescriptionText").GetComponent<LanguageTextMeshController>();
+            b1Button.hoverLanguageTextMeshController = b2Button.hoverLanguageTextMeshController = b3Button.hoverLanguageTextMeshController = child.Find("GenericMenuButtonPanel/JuicePanel/DescriptionPanel, Naked/ContentSizeFitter/DescriptionText").GetComponent<LanguageTextMeshController>();
             b1Button.onClick.AddListener(() => b1Component.UpdateText(true));
             b2Button.onClick.AddListener(() => b2Component.UpdateText(true));
+            b3Button.onClick.AddListener(() => b3Component.UpdateText(true));
         }
     }
 }

@@ -22,7 +22,7 @@ namespace VoiceActedMithrix
         //Mod focused stuff / strings
         public const string MODNAME = "com.Egg.VoiceActedMithrix";
         public const string MODTITLE = "Voice Acted Mithrix Redux";
-        public const string MODVERS = "1.1.1";
+        public const string MODVERS = "1.1.2";
 
         //Path for our lang folder
         internal static string BankPathBrother;
@@ -30,6 +30,7 @@ namespace VoiceActedMithrix
         internal static string BankPathVulture;
         internal static string BankPathSolus;
         internal static string BankPathChef;
+        internal static string BankPathSpex;
 
         static string[] brotherFileNames = new string[]
         {
@@ -41,12 +42,19 @@ namespace VoiceActedMithrix
             "vafalseson.bnk",
             "vakkingfalseson.bnk"
         };
+        static string[] solusFileNames = new string[]
+        {
+            "vasolus.bnk",
+            "vabootlegbisonsolus.bnk"
+        };
+
         static string vultureFileName = "vavulture.bnk";
-        static string solusFileName = "vasolus.bnk";
         static string chefFileName = "vachef.bnk";
+        static string spexFileName = "vaspex.bnk";
 
         internal static uint currentMithrixVoiceBank;
         internal static uint currentFalseSonVoiceBank;
+        internal static uint currentSolusHeartVoiceBank;
 
         public static PluginInfo PInfo { get; private set; }
 
@@ -56,19 +64,21 @@ namespace VoiceActedMithrix
             Configuration.LoadConfig();
             BankPathBrother = GetBrotherPath(Configuration.MithrixVoice.Value);
             BankPathFalseson = GetFalseSonPath(Configuration.FalseSonVoice.Value);
+            BankPathSolus = GetSolusPath(Configuration.SolusHeartVoice.Value);
             BankPathVulture = GetVulturePath();
             BankPathChef = GetChefPath();
-            BankPathSolus = GetSolusPath();
+            BankPathSpex = GetSpexPath();
 
             SoundAPI.SoundBanks.Add(BankPathVulture);
             SoundAPI.SoundBanks.Add(BankPathChef);
-            SoundAPI.SoundBanks.Add(BankPathSolus);
+            SoundAPI.SoundBanks.Add(BankPathSpex);
 
             currentMithrixVoiceBank = SoundAPI.SoundBanks.Add(BankPathBrother);
             currentFalseSonVoiceBank = SoundAPI.SoundBanks.Add(BankPathFalseson);
+            currentSolusHeartVoiceBank = SoundAPI.SoundBanks.Add(BankPathSolus);
 
             NetworkingAPI.RegisterMessageType<NetworkBossVoiceMessage>();
-            if (Configuration.MithrixVoice.Value == 0) HereticKurskanFix();
+            if (Configuration.MithrixVoice.Value == 0) HereticKurskanFix("Kur-skan");
             if(Configuration.DisplayUI.Value) UIManager.Init();
         }
 
@@ -80,7 +90,11 @@ namespace VoiceActedMithrix
         internal static string GetFalseSonPath(int index)
         {
             return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks", falseSonFileNames[index]);
+        }
 
+        internal static string GetSolusPath(int index)
+        {
+            return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks", solusFileNames[index]);
         }
 
         internal static string GetVulturePath()
@@ -93,9 +107,9 @@ namespace VoiceActedMithrix
             return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks", chefFileName);
         }
 
-        internal static string GetSolusPath()
+        internal static string GetSpexPath()
         {
-            return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks", solusFileName);
+            return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks", spexFileName);
         }
 
         internal static void LoadBrotherVoice()
@@ -110,6 +124,11 @@ namespace VoiceActedMithrix
             currentFalseSonVoiceBank = SoundAPI.SoundBanks.Add(GetFalseSonPath(Configuration.FalseSonVoice.Value));
         }
 
+        internal static void LoadSolusHeartVoice()
+        {
+            SoundAPI.SoundBanks.Remove(currentSolusHeartVoiceBank);
+            currentSolusHeartVoiceBank = SoundAPI.SoundBanks.Add(GetSolusPath(Configuration.SolusHeartVoice.Value));
+        }
 
         private void OnEnable()
         {
@@ -117,6 +136,8 @@ namespace VoiceActedMithrix
             FalseSonBossSpeechDriver.SendReponseFromPool += FalseSonBossSpeechDriver_SendReponseFromPool;
             CharacterSpeechController.SpeakNow += OnSpeak;
             On.RoR2.OverrideFightBase.NpcMessage += VultureSpeak;
+            On.RoR2.Chat.SendBroadcastChat_ChatMessageBase += Chat_SendBroadcastChat_ChatMessageBase;
+            MealPrepSpeechDriver.Talk += MealPrepSpeechDriver_Talk;
             
             if(Configuration.DisplayUI.Value) On.RoR2.UI.MainMenu.MainMenuController.Start += UIManager.AddUI;
         }
@@ -127,6 +148,8 @@ namespace VoiceActedMithrix
             FalseSonBossSpeechDriver.SendReponseFromPool -= FalseSonBossSpeechDriver_SendReponseFromPool;
             CharacterSpeechController.SpeakNow -= OnSpeak;
             On.RoR2.OverrideFightBase.NpcMessage -= VultureSpeak;
+            On.RoR2.Chat.SendBroadcastChat_ChatMessageBase -= Chat_SendBroadcastChat_ChatMessageBase;
+            MealPrepSpeechDriver.Talk -= MealPrepSpeechDriver_Talk;
 
             if (Configuration.DisplayUI.Value) On.RoR2.UI.MainMenu.MainMenuController.Start -= UIManager.AddUI;
         }
@@ -145,6 +168,7 @@ namespace VoiceActedMithrix
             if (speechInfo.token.Contains("BROTHER")) BrotherSpeak(speechInfo.token, sourceObject);
             else if (speechInfo.token.Contains("FALSESONBOSS")) FalseSonSpeak(speechInfo.token, sourceObject);
             else if (speechInfo.token.Contains("SOLUSHEART")) HeartSpeak(speechInfo.token, sourceObject);
+            else if (speechInfo.token.Contains("SOLUS_VENDOR")) SpexSpeak(speechInfo.token, sourceObject);
             else if (speechInfo.token.Contains("MEALPREP")) ChefSpeak(speechInfo.token, sourceObject);    
             
         }
@@ -176,10 +200,18 @@ namespace VoiceActedMithrix
 
         private static void HeartSpeak(string token, GameObject sourceObject)
         {
-            string modified = "VAMR_" + token;
+            string modified = GetModifiedToken(token, Configuration.SolusHeartVoice.Value);
             BossVoiceComponent component = sourceObject.GetComponent<BossVoiceComponent>();
             if (!component) component = sourceObject.AddComponent<BossVoiceComponent>();
             component.TryVoiceLine(new BossLineEvent(modified, GetLocalPlayer().bodyInstanceObject, sourceObject));
+        }
+
+        private static void SpexSpeak(string token, GameObject sourceObject)
+        {
+            string modified = "VAMR_" + token;
+            BossVoiceComponent component = sourceObject.GetComponent<BossVoiceComponent>();
+            if (!component) component = sourceObject.AddComponent<BossVoiceComponent>();
+            component.TryVoiceLine(new BossLineEvent(modified, sourceObject, sourceObject));
         }
 
         private static void ChefSpeak(string token, GameObject sourceObject)
@@ -204,11 +236,11 @@ namespace VoiceActedMithrix
             return "VAMR_" + voiceIndex + "_" + baseToken;
         }
 
-        private void HereticKurskanFix()
+        internal static void HereticKurskanFix(string name)
         {
-            LanguageAPI.Add("BROTHER_SEE_HERETIC_1", "Regret this journey, Kur-skan.", "en");
-            LanguageAPI.Add("BROTHER_KILL_HERETIC_2", "Die again, Kur-skan.", "en");
-            LanguageAPI.Add("BROTHERHURT_KILL_HERETIC_2", "DIE AGAIN, KUR-SKAN.", "en");
+            LanguageAPI.Add("BROTHER_SEE_HERETIC_1", $"Regret this journey, {name}.", "en");
+            LanguageAPI.Add("BROTHER_KILL_HERETIC_2", $"Die again, {name}.", "en");
+            LanguageAPI.Add("BROTHERHURT_KILL_HERETIC_2", $"DIE AGAIN, {name.ToUpper()}.", "en");
         }
 
         internal static CharacterMaster GetLocalPlayer()
@@ -220,13 +252,44 @@ namespace VoiceActedMithrix
         private static void FalseSonBossSpeechDriver_SendReponseFromPool(FalseSonBossSpeechDriver.orig_SendReponseFromPool orig, RoR2.CharacterSpeech.FalseSonBossSpeechDriver self, RoR2.CharacterSpeech.CharacterSpeechController.SpeechInfo[] responsePool)
         {
             if (responsePool.Length == 0) return;
-            self.characterSpeechController.EnqueueSpeech(responsePool[Random.Range(0, responsePool.Length)]);
+            self.characterSpeechController.EnqueueSpeech(responsePool[UnityEngine.Random.Range(0, responsePool.Length)]);
         }
 
         private static void BrotherSpeechDriver_SendReponseFromPool(BrotherSpeechDriver.orig_SendReponseFromPool orig, RoR2.CharacterSpeech.BrotherSpeechDriver self, RoR2.CharacterSpeech.CharacterSpeechController.SpeechInfo[] responsePool)
         {
             if (responsePool.Length == 0) return;
-            self.characterSpeechController.EnqueueSpeech(responsePool[Random.Range(0, responsePool.Length)]);
+            self.characterSpeechController.EnqueueSpeech(responsePool[UnityEngine.Random.Range(0, responsePool.Length)]);
+        }
+
+        //I'm going to fucking shit myself dude WHY DO THEY DO IT LIKE THIS?!?
+        private void Chat_SendBroadcastChat_ChatMessageBase(On.RoR2.Chat.orig_SendBroadcastChat_ChatMessageBase orig, ChatMessageBase message)
+        {
+            if (message.GetType() == typeof(Chat.NpcChatMessage))
+            {
+                Chat.NpcChatMessage npcChatMessage = message as Chat.NpcChatMessage;
+                GameObject sourceObject = GameObject.Find("SolusVendorBody(Clone)");
+                if (sourceObject)
+                {
+                    if (npcChatMessage.baseToken.Contains("SOLUS_VENDOR_SHRINE_KEY_CRAFTED")) SpexSpeak(npcChatMessage.baseToken, sourceObject);
+                    else Log.LogWarning("Where in the FUCK did SPEX go?!?!?");
+                }
+            }
+            orig(message);
+        }
+        //Don't ask.  Or do, I hate this.
+        private void MealPrepSpeechDriver_Talk(MealPrepSpeechDriver.orig_Talk orig, RoR2.CharacterSpeech.MealPrepSpeechDriver self, int itemID)
+        {
+            if (self.thankYouComeAgainDecryptedKeyCreated.Length == 1)
+            {
+                RoR2.CharacterSpeech.CharacterSpeechController.SpeechInfo info = self.thankYouComeAgainDecryptedKeyCreated[0];
+                info.token = "SOLUS_VENDOR_SHRINE_KEY_CRAFTED_DISTANT";
+                self.thankYouComeAgainDecryptedKeyCreated = new RoR2.CharacterSpeech.CharacterSpeechController.SpeechInfo[2]
+                {
+                    self.thankYouComeAgainDecryptedKeyCreated[0],
+                    info
+                };
+            }
+            orig(self, itemID);
         }
     }
 }
